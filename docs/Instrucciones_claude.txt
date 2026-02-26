@@ -1,0 +1,79 @@
+Paso 2. Prepara el terreno antes de hablar
+El fallo número uno. Abrir Claude Code y empezar a dictarle lo primero que se te pasa por la cabeza. Es como llegar a una reunión con el equipo sin haber preparado nada: se pierde el doble de tiempo.
+
+Con Shift + Tab dos veces entras en modo plan. Claude investiga tu código, propone un enfoque, y tú lo validas antes de que toque nada. Son cinco minutos de planificación que he visto ahorrar tardes enteras de rehacer trabajo.
+
+¿No tienes background técnico profundo para pensar la arquitectura tú solo? Dos rutas:
+
+Invierte en formación. Aunque sea poco a poco. Entender los fundamentos de diseño de software te hace infinitamente mejor dirigiendo a la IA.
+Usa otra IA como sparring antes de ejecutar. Abre ChatGPT o Gemini, describe lo que necesitas, y debate con ella las opciones de diseño. Hazle preguntas. Que te haga preguntas a ti. Llega a un acuerdo. Ese acuerdo es tu plan.
+
+La diferencia entre dar instrucciones vagas y dar instrucciones precisas es la diferencia entre resultados mediocres y resultados que puedes poner en producción. Compara:
+
+«Hazme la gestión de suscripciones» → Te va a inventar medio framework.
+«Crea el modelo Subscription con campos user_id, plan_type y expires_at. Añade un servicio SubscriptionManager que gestione la renovación automática vía Stripe Billing. Monta un endpoint PUT /api/subscriptions/:id/upgrade que valide el cambio de plan contra la tabla pricing_tiers antes de llamar a la API de Stripe.» → Esto tiene destino claro.
+
+Si le dejas espacio para improvisar, improvisará. Y no siempre en la dirección que quieres.
+
+
+Paso 3. Tu CLAUDE.md es el briefing del proyecto
+Al arrancar cada sesión, lo primero que hace Claude es leer este fichero. Es tu oportunidad de darle todo el contexto que no cabe en un prompt.
+
+Piénsalo como la guía interna que le dejarías a un freelance antes de empezar a trabajar en tu proyecto. No le explicas qué es React. Le explicas las rarezas: qué módulos no debe modificar, qué variables de entorno necesita, qué convenciones de naming usáis, por qué ciertas decisiones técnicas se tomaron así.
+
+Lo que he aprendido a base de tropezar:
+
+Que sea breve. Claude gestiona con fiabilidad unas cien instrucciones en paralelo. El sistema operativo de Claude Code ya consume una parte de esa capacidad de atención. Si tu CLAUDE.md parece un TFG, empezará a saltarse cosas. Y no sabrás cuáles.
+Que sea concreto. Nada de documentar lo obvio. Claude ya sabe qué es una API REST. Lo que no sabe es que tu equipo usa snake_case en la base de datos pero camelCase en el frontend, o que los tests de integración deben correr contra el contenedor Docker local y no contra staging.
+Explica el motivo, no solo la norma. «Usa Typescript en vez de Javascript para los nuevos módulos» funciona. «Usa Typescript porque llevamos dos años migrando progresivamente y Javascript solo se mantiene en los módulos legacy que no queremos tocar» funciona mucho mejor. Con el motivo, Claude toma buenas decisiones en situaciones que no anticipaste.
+Trátalo como un documento vivo. Con la tecla # puedes ir añadiendo instrucciones sobre la marcha mientras trabajas. ¿Le has corregido dos veces el mismo error? Eso ya debería estar en el fichero. Al cabo de semanas, tienes un CLAUDE.md que captura cómo funciona realmente tu proyecto, no cómo creías que funcionaba.
+
+
+Paso 4. Aprende a dar instrucciones
+Te pasas semanas leyendo cómo usar el lenguaje/framework de moda (¡Hola, Rustaceans! 😉), pero abres la IA y te piensas que estás chateando con un vecino. Aprende a comunicarte con la herramienta que genera tu código. No es magia negra. Es comunicación clara. Igual que con un compañero de equipo: cuanto más preciso eres, mejor resultado obtienes.
+
+Acota lo que quieres. «Monta el módulo de facturación» es demasiado abierto. «Crea un servicio InvoiceGenerator que recoja los line items de la tabla order_items, aplique el IVA según el país del cliente consultando la tabla tax_rates, genere un PDF con la librería WeasyPrint, y lo almacene en S3 bajo el prefijo invoices/{year}/{month}/» no deja margen para inventos.
+Marca los límites explícitamente. Claude tiende a sobredimensionar. Le pides algo sencillo y te devuelve una solución enterprise con capas de abstracción que nadie pidió. A mí me ha llegado a generar una estructura de ocho ficheros para algo que se resolvía con una función de 40 líneas. Di cosas como: «Solución mínima. Sin capas de abstracción extra. Un solo fichero.»
+Cuéntale las restricciones de negocio. «Este endpoint lo llaman 200 clientes por segundo en hora punta, optimiza para latencia» cambia completamente su enfoque. «Esto es una prueba de concepto interna que usaremos dos semanas» le indica que no necesita construir para la eternidad. Lo que no le dices, no existe para él.
+
+Y un recordatorio que me repito todo el tiempo: estas herramientas nos hacen más rápidos, no infalibles. Claude se equivoca. Se equivocará mañana también. Tu trabajo es detectar esos errores. Si no puedes distinguir entre código bueno y código que parece bueno, tu problema no es la IA.
+
+
+
+Paso 8. Skills: enséñale tus procesos internos
+Un skill es un fichero markdown que le enseña a Claude una tarea concreta de tu trabajo. Cuando detecta que lo que le pides encaja con un skill instalado, lo activa solo. Tú no tienes que invocarlo.
+
+La estructura es directa. Creas una carpeta con un fichero SKILL.md:
+
+~/.claude/skills/nombre/SKILL.md → disponible en todos tus proyectos .claude/skills/nombre/SKILL.md → compartido con tu equipo vía repositorio
+
+El fichero arranca con una cabecera YAML (nombre y descripción) y debajo las instrucciones en markdown. La descripción es lo más importante: Claude la usa para decidir cuándo activarlo.
+
+Este sería un skill para validar los endpoints antes de integrar con el frontend:
+
+---
+name: api-contract-validator
+description: Valida que los endpoints de la API cumplan el contrato acordado con frontend. Usar al crear o modificar endpoints REST, o cuando el usuario pida revisar la API.
+---
+
+# Validación de contratos API
+
+Al revisar o crear endpoints:
+1. Verifica que la respuesta JSON siga el formato envelope: { data, meta, errors }
+2. Confirma que los campos de fecha usen ISO 8601 con timezone
+3. Comprueba que los códigos de error sigan nuestro catálogo en docs/error-codes.md
+4. Valida que la paginación use cursor-based, no offset
+5. Asegura que los nombres de campo sean camelCase en la respuesta
+
+Si detectas incumplimientos, lista cada uno con el fichero y línea exactos. 
+El truco de rendimiento: Claude solo carga la cabecera de cada skill al inicio (nombre + descripción, muy poco peso). Las instrucciones completas se cargan bajo demanda, cuando las necesita. Esto significa que puedes tener 30 skills instalados sin penalizar el contexto.
+
+Si tienes documentación de referencia extensa (guías de estilo, catálogos de errores), ponla en ficheros separados dentro de la carpeta del skill y referéncialos desde el SKILL.md. Claude los leerá solo cuando active ese skill.
+
+Algunas ideas de skills interesantes: validación de contratos API, formato de mensajes de PR, checklist de pre-despliegue, patrones de consultas para tu esquema específico, convenciones de logging.
+
+Ojo: Los skills no se limitan a código. En mi caso no sólo uso Claude Code para programar. También genero plantillas de propuestas comerciales, estructuras de informes…
+
+La regla es simple: si te descubres explicándole lo mismo a Claude más de dos veces, eso es un skill que falta.
+
+Para ver qué skills están activos: pregúntale directamente «¿Qué skills tienes?» o mira en settings → capabilities.
