@@ -115,11 +115,8 @@ com.sergio.prices/
 
 **Regla fundamental**: El paquete `domain/` no tiene ninguna dependencia de Spring, JPA ni ningún otro framework. Las dependencias siempre apuntan hacia dentro (infrastructure → application → domain).
 
-Para una explicación detallada con comparativas, ver [docs/GUIA_HEXAGONAL.md](docs/GUIA_HEXAGONAL.md).
-
 ## Documentación
 
-- [Guía de Arquitectura Hexagonal](docs/GUIA_HEXAGONAL.md) - Explicación didáctica con comparativas
 - [Decisiones Técnicas](docs/DECISIONES.md) - Registro de decisiones (ADR)
 - [Proceso con Claude Code](docs/PROCESO_CLAUDE_CODE.md) - Cómo se integró Claude Code en el desarrollo
 
