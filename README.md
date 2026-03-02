@@ -41,12 +41,26 @@ GET /api/prices?applicationDate={date}&productId={id}&brandId={id}
 - `productId`: Identificador del producto (ej: `35455`)
 - `brandId`: Identificador de la cadena (ej: `1` para ZARA)
 
-**Ejemplo:**
+**Ejemplos (los 5 casos del enunciado):**
+
 ```bash
+# Caso 1: 14/06 10:00 → tarifa 1, precio 35.50 €
 curl "http://localhost:8080/api/prices?applicationDate=2020-06-14T10:00:00&productId=35455&brandId=1"
+
+# Caso 2: 14/06 16:00 → tarifa 2, precio 25.45 € (promoción de mayor prioridad)
+curl "http://localhost:8080/api/prices?applicationDate=2020-06-14T16:00:00&productId=35455&brandId=1"
+
+# Caso 3: 14/06 21:00 → tarifa 1, precio 35.50 € (la promoción ya no aplica)
+curl "http://localhost:8080/api/prices?applicationDate=2020-06-14T21:00:00&productId=35455&brandId=1"
+
+# Caso 4: 15/06 10:00 → tarifa 3, precio 30.50 €
+curl "http://localhost:8080/api/prices?applicationDate=2020-06-15T10:00:00&productId=35455&brandId=1"
+
+# Caso 5: 16/06 21:00 → tarifa 4, precio 38.95 €
+curl "http://localhost:8080/api/prices?applicationDate=2020-06-16T21:00:00&productId=35455&brandId=1"
 ```
 
-**Respuesta:**
+**Respuesta de ejemplo (Caso 1):**
 ```json
 {
   "productId": 35455,

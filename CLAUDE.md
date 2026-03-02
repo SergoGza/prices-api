@@ -1,20 +1,18 @@
-# CLAUDE.md - Prices API (Prueba Técnica)
+# CLAUDE.md - Prices API
 
 ## Contexto del Proyecto
-Prueba técnica para una entrevista. La empresa usa Claude Code en su workflow diario.
-Lo que se valora: criterio técnico, calidad de código, documentación de decisiones,
-y cómo se integra Claude Code en el proceso de desarrollo.
-Esto NO es software de producción: es una demostración enfocada de ingeniería sobre
-un problema pequeño y bien acotado (1 entidad, 1 endpoint, 5 tests).
+API REST de consulta de precios para una cadena de comercio electrónico.
+Dado un producto, marca y fecha, devuelve el precio aplicable resolviendo solapamientos
+por prioridad. Alcance acotado: 1 entidad (Price), 1 endpoint, 5 tests de integración.
+El equipo usa Claude Code en su workflow diario.
 
 ## Stack Tecnológico
 - Java 21 (Temurin 21.0.3) + Spring Boot 4.0.3 + Maven 3.9.11
-- H2 en memoria (requerido por el enunciado)
+- H2 en memoria
 - MapStruct 1.6.3 para mapeo entre capas (genera código en compilación, sin reflexión)
 - JUnit 5 para tests de integración
 
 **Peculiaridades de Spring Boot 4 que debes conocer:**
-- Jackson 3: los paquetes son `tools.jackson.*`, NO `com.fasterxml.jackson.*`
 - El starter web se llama `spring-boot-starter-webmvc` (antes `spring-boot-starter-web`)
 - Los starters de test son `spring-boot-starter-webmvc-test` y `spring-boot-starter-data-jpa-test`
 - Hibernate 7.1 con Jakarta Persistence 3.2 (JPQL soporta LIMIT)
@@ -43,8 +41,23 @@ infrastructure/ → application/ → domain/
 - Documentación (README, decisiones, proceso): en ESPAÑOL
 - Google Java Style para formateo
 - Usar `final` en parámetros de método y variables locales no reasignadas
-- Usar features de Java 21: records para DTOs, pattern matching donde aplique
 - Tabs: NO. Usar 4 espacios de indentación
+
+**DTOs inmutables como records de Java 21:**
+```java
+public record PriceResponse(
+        long brandId,
+        long productId,
+        int priceList,
+        LocalDateTime startDate,
+        LocalDateTime endDate,
+        BigDecimal price,
+        String currency) {}
+```
+
+```java
+public record ErrorResponse(int status, String message, LocalDateTime timestamp) {}
+```
 
 ## Convenciones de Naming
 - Paquetes: lowercase sin guiones (com.sergio.prices.domain.model)
@@ -60,7 +73,7 @@ infrastructure/ → application/ → domain/
 ## Restricciones Explícitas (DO NOT)
 - NO usar Lombok. El proyecto es pequeño y los records de Java 21 cubren la necesidad
   de DTOs inmutables. MapStruct funciona mejor sin la complejidad de Lombok.
-- NO añadir Swagger/OpenAPI. El enunciado no lo pide y añade ruido.
+- NO añadir Swagger/OpenAPI. No forma parte del alcance del proyecto.
 - NO crear Request DTO. Son 3 query params de un GET (@RequestParam). Un wrapper no aporta nada.
 - NO sobredimensionar. Un solo fichero por responsabilidad. Sin capas de abstracción extra.
   Si te pido algo sencillo, no generes una solución enterprise de 8 ficheros.
@@ -76,7 +89,7 @@ infrastructure/ → application/ → domain/
 
 ## Testing
 - Tests de integración con @SpringBootTest(webEnvironment = RANDOM_PORT)
-- 5 tests obligatorios validando el endpoint GET /api/prices con las peticiones del enunciado:
+- 5 tests de integración validando el endpoint GET /api/prices:
   - Test 1: 2020-06-14T10:00 → priceList=1, price=35.50
   - Test 2: 2020-06-14T16:00 → priceList=2, price=25.45
   - Test 3: 2020-06-14T21:00 → priceList=1, price=35.50
